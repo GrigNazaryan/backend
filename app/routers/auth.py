@@ -11,12 +11,21 @@ from app.services.otp_service import OtpError, send_verification_code, verify_co
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+# @router.post("/send-code", status_code=status.HTTP_204_NO_CONTENT)
+# def send_code(payload: SendCodeRequest, db: Session = Depends(get_db)):
+#     try:
+#         send_verification_code(db, payload.email)
+#     except OtpError as e:
+#         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+
 @router.post("/send-code", status_code=status.HTTP_204_NO_CONTENT)
 def send_code(payload: SendCodeRequest, db: Session = Depends(get_db)):
+    print(f"DEBUG: Payload received: {payload.dict()}") # <-- ЭТА СТРОКА ПОКАЖЕТ, ЧТО ПРИШЛО
     try:
         send_verification_code(db, payload.email)
     except OtpError as e:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+
 
 
 @router.post("/verify-code", response_model=TokenResponse)
