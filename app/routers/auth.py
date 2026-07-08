@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter,Request, Depends, HTTPException, status
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
@@ -18,15 +18,20 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 #     except OtpError as e:
 #         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
 
-@router.post("/send-code", status_code=status.HTTP_204_NO_CONTENT)
-def send_code(payload: SendCodeRequest, db: Session = Depends(get_db)):
-    print(f"DEBUG: Payload received: {payload.dict()}") # <-- ЭТА СТРОКА ПОКАЖЕТ, ЧТО ПРИШЛО
+@router.post("/send-code")
+async def send_code(request: Request, db: Session = Depends(get_db)):
+    body = await request.json()
+    print(f"DEBUG: Raw body received: {body}")
+    
+    # Пытаемся распарсить вручную, чтобы увидеть ошибку
     try:
+        payload = SendCodeRequest(**body)
         send_verification_code(db, payload.email)
-    except OtpError as e:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
-
-
+        return {"status": "ok"}
+    except Exception as e:
+        print(f"DEBUG: Validation error: {e}")
+        return {"error": str(e)}
+    
 
 @router.post("/verify-code", response_model=TokenResponse)
 def verify_code(payload: VerifyCodeRequest, db: Session = Depends(get_db)):
